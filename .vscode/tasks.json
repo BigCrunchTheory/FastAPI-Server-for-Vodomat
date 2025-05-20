@@ -1,0 +1,13 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "Create virtual environment and install FastAPI, Uvicorn, SQLAlchemy, fastapi-admin, python-dotenv, pandas for CSV import",
+			"command": "python -m venv venv && .\\venv\\Scripts\\Activate.ps1 && pip install fastapi uvicorn[standard] sqlalchemy fastapi-admin python-dotenv pandas",
+			"group": "build",
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}

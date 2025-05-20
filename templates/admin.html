@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Админ-панель WaterMap</title>
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=87f17952-c9ca-4e0d-8ef7-cc71be81f013&lang=ru_RU" type="text/javascript"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 56px;
+        }
+        #map {
+            width: 100%;
+            height: calc(100vh - 56px);
+        }
+        .admin-container {
+            display: flex;
+            height: calc(100vh - 56px);
+        }
+        .map-container {
+            flex: 2;
+            position: relative;
+        }
+        .sidebar {
+            flex: 1;
+            max-width: 400px;
+            padding: 20px;
+            background: #f8f9fa;
+            overflow-y: auto;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+        }
+        .controls-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .point-type {
+            margin-bottom: 5px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .btn-add-point {
+            margin-bottom: 10px;
+        }
+        .point-list {
+            margin-top: 20px;
+        }
+        .point-item {
+            padding: 10px;
+            margin-bottom: 5px;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .point-item:hover {
+            background: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Навигационная панель -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">WaterMap Admin</a>
+            <div class="d-flex">
+                <button class="btn btn-success me-2" onclick="showAddPointForm()">Добавить точку</button>
+                <button class="btn btn-primary" onclick="exportData()">Экспорт данных</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="admin-container">
+        <div class="map-container">
+            <div id="map"></div>
+            <div class="controls-panel">
+                <div class="form-group">
+                    <label>Фильтр по типу:</label>
+                    <select class="form-select" id="typeFilter" onchange="filterPoints()">
+                        <option value="">Все типы</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Мин. рейтинг:</label>
+                    <input type="number" class="form-control" id="ratingFilter" min="0" max="5" step="0.5" onchange="filterPoints()">
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div id="pointForm" style="display: none;">
+                <h4 id="formTitle">Редактировать точку</h4>
+                <form id="waterPointForm" class="mb-4">
+                    <input type="hidden" id="pointId">
+                    <div class="form-group">
+                        <label for="name">Название:</label>
+                        <input type="text" class="form-control" id="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Описание:</label>
+                        <textarea class="form-control" id="description" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="type">Тип:</label>
+                        <select class="form-select" id="type">
+                            <option value="водомат">Водомат</option>
+                            <option value="родник">Родник</option>
+                            <option value="колонка">Колонка</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="address">Адрес:</label>
+                        <input type="text" class="form-control" id="address">
+                    </div>
+                    <div class="form-group">
+                        <label for="city">Город:</label>
+                        <input type="text" class="form-control" id="city">
+                    </div>
+                    <div class="form-group">
+                        <label for="rating">Рейтинг:</label>
+                        <input type="number" class="form-control" id="rating" step="0.1" min="0" max="5">
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Телефон:</label>
+                        <input type="text" class="form-control" id="phone">
+                    </div>
+                    <div class="form-group">
+                        <label for="latitude">Широта:</label>
+                        <input type="number" class="form-control" id="latitude" step="0.000001" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="longitude">Долгота:</label>
+                        <input type="number" class="form-control" id="longitude" step="0.000001" required>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                        <button type="button" class="btn btn-danger" onclick="deletePoint()">Удалить</button>
+                        <button type="button" class="btn btn-secondary" onclick="hideForm()">Отмена</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="pointList" class="point-list">
+                <!-- Список точек будет добавлен динамически -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let myMap;
+        let currentPointId;
+        let markers = new Map();
+        let points = [];
+        let isAddingPoint = false;
+
+        ymaps.ready(init);
+
+        function init() {
+            myMap = new ymaps.Map('map', {
+                center: [54.735147, 55.958727],
+                zoom: 12,
+                controls: ['zoomControl', 'searchControl']
+            });
+
+            // Добавляем возможность создания точки кликом по карте
+            myMap.events.add('click', function (e) {
+                if (isAddingPoint) {
+                    const coords = e.get('coords');
+                    showAddPointForm(coords);
+                }
+            });
+
+            loadPoints();
+        }
+
+        async function loadPoints() {
+            try {
+                const response = await fetch('/water-points');
+                points = await response.json();
+                
+                // Очищаем карту и список маркеров
+                myMap.geoObjects.removeAll();
+                markers.clear();
+                updatePointsList();
+                updateTypeFilter();
+
+                points.forEach(point => {
+                    addMarkerToMap(point);
+                });
+            } catch (error) {
+                console.error('Ошибка при загрузке точек:', error);
+            }
+        }
+
+        function addMarkerToMap(point) {
+            const marker = new ymaps.Placemark([point.latitude, point.longitude], {
+                hintContent: point.name,
+                balloonContent: `
+                    <strong>${point.name}</strong><br>
+                    ${point.description || ''}<br>
+                    <strong>Тип:</strong> ${point.type || 'Не указан'}<br>
+                    <strong>Адрес:</strong> ${point.address || 'Не указан'}<br>
+                    <strong>Рейтинг:</strong> ${point.rating || 'Не указан'}
+                `
+            }, {
+                preset: getMarkerPreset(point.type)
+            });
+
+            marker.events.add('click', () => showEditForm(point));
+            myMap.geoObjects.add(marker);
+            markers.set(point.id, marker);
+        }
+
+        function getMarkerPreset(type) {
+            switch(type) {
+                case 'водомат':
+                    return 'islands#blueWaterParkIcon';
+                case 'родник':
+                    return 'islands#darkGreenWaterParkIcon';
+                case 'колонка':
+                    return 'islands#violetWaterParkIcon';
+                default:
+                    return 'islands#blueWaterParkIcon';
+            }
+        }
+
+        function updatePointsList() {
+            const listContainer = document.getElementById('pointList');
+            listContainer.innerHTML = '<h5>Список точек:</h5>';
+            
+            points.forEach(point => {
+                const div = document.createElement('div');
+                div.className = 'point-item';
+                div.innerHTML = `
+                    <strong>${point.name}</strong><br>
+                    <small>${point.type || 'Тип не указан'} | Рейтинг: ${point.rating || 'Нет'}</small>
+                `;
+                div.onclick = () => {
+                    showEditForm(point);
+                    myMap.setCenter([point.latitude, point.longitude], 16);
+                };
+                listContainer.appendChild(div);
+            });
+        }
+
+        function updateTypeFilter() {
+            const filter = document.getElementById('typeFilter');
+            const types = new Set(points.map(p => p.type).filter(Boolean));
+            
+            filter.innerHTML = '<option value="">Все типы</option>';
+            types.forEach(type => {
+                filter.innerHTML += `<option value="${type}">${type}</option>`;
+            });
+        }
+
+        function filterPoints() {
+            const typeFilter = document.getElementById('typeFilter').value;
+            const ratingFilter = parseFloat(document.getElementById('ratingFilter').value) || 0;
+
+            points.forEach(point => {
+                const marker = markers.get(point.id);
+                const typeMatch = !typeFilter || point.type === typeFilter;
+                const ratingMatch = !ratingFilter || (point.rating && point.rating >= ratingFilter);
+                
+                if (typeMatch && ratingMatch) {
+                    marker.options.set('visible', true);
+                } else {
+                    marker.options.set('visible', false);
+                }
+            });
+        }
+
+        function showAddPointForm(coords = null) {
+            isAddingPoint = false;
+            const form = document.getElementById('pointForm');
+            document.getElementById('formTitle').textContent = 'Добавить точку';
+            form.style.display = 'block';
+            
+            // Очищаем форму
+            document.getElementById('pointId').value = '';
+            document.getElementById('waterPointForm').reset();
+            
+            if (coords) {
+                document.getElementById('latitude').value = coords[0].toFixed(6);
+                document.getElementById('longitude').value = coords[1].toFixed(6);
+            }
+        }
+
+        function showEditForm(point) {
+            const form = document.getElementById('pointForm');
+            document.getElementById('formTitle').textContent = 'Редактировать точку';
+            form.style.display = 'block';
+            currentPointId = point.id;
+            
+            document.getElementById('pointId').value = point.id;
+            document.getElementById('name').value = point.name;
+            document.getElementById('description').value = point.description || '';
+            document.getElementById('type').value = point.type || '';
+            document.getElementById('address').value = point.address || '';
+            document.getElementById('city').value = point.city || '';
+            document.getElementById('rating').value = point.rating || '';
+            document.getElementById('phone').value = point.phone || '';
+            document.getElementById('latitude').value = point.latitude;
+            document.getElementById('longitude').value = point.longitude;
+        }
+
+        function hideForm() {
+            document.getElementById('pointForm').style.display = 'none';
+            isAddingPoint = false;
+        }
+
+        document.getElementById('waterPointForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                name: document.getElementById('name').value,
+                description: document.getElementById('description').value,
+                type: document.getElementById('type').value,
+                address: document.getElementById('address').value,
+                city: document.getElementById('city').value,
+                rating: parseFloat(document.getElementById('rating').value) || null,
+                phone: document.getElementById('phone').value,
+                latitude: parseFloat(document.getElementById('latitude').value),
+                longitude: parseFloat(document.getElementById('longitude').value)
+            };
+
+            try {
+                const isNewPoint = !currentPointId;
+                const url = isNewPoint ? '/water-points' : `/water-points/${currentPointId}`;
+                const method = isNewPoint ? 'POST' : 'PUT';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    alert(isNewPoint ? 'Точка успешно добавлена' : 'Точка успешно обновлена');
+                    hideForm();
+                    loadPoints();
+                } else {
+                    alert('Ошибка при сохранении точки');
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Ошибка при сохранении точки');
+            }
+        });
+
+        async function deletePoint() {
+            if (!currentPointId || !confirm('Вы уверены, что хотите удалить эту точку?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/water-points/${currentPointId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    alert('Точка успешно удалена');
+                    hideForm();
+                    loadPoints();
+                } else {
+                    alert('Ошибка при удалении точки');
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Ошибка при удалении точки');
+            }
+        }
+
+        function startAddingPoint() {
+            isAddingPoint = true;
+            alert('Кликните по карте, чтобы добавить новую точку');
+        }
+
+        async function exportData() {
+            try {
+                const csvContent = "data:text/csv;charset=utf-8," + 
+                    "Название,Описание,Тип,Адрес,Город,Рейтинг,Телефон,Широта,Долгота\n" +
+                    points.map(point => [
+                        point.name,
+                        point.description || '',
+                        point.type || '',
+                        point.address || '',
+                        point.city || '',
+                        point.rating || '',
+                        point.phone || '',
+                        point.latitude,
+                        point.longitude
+                    ].join(",")).join("\n");
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "water_points.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (error) {
+                console.error('Ошибка при экспорте данных:', error);
+                alert('Ошибка при экспорте данных');
+            }
+        }
+    </script>
+</body>
+</html>
