@@ -17,18 +17,36 @@ def import_csv_to_db():
             address=row.get('Адрес'),
             city=row.get('Город'),
             country=row.get('Страна'),
-            rating=row.get('Рейтинг') if not pd.isna(row.get('Рейтинг')) else None,
+            rating=parse_float(row.get('Рейтинг')),
             website=row.get('Веб-сайт 1'),
-            reviews_count=row.get('Количество отзывов') if not pd.isna(row.get('Количество отзывов')) else None,
+            reviews_count=parse_int(row.get('Количество отзывов')),
             region=row.get('Регион'),
             timezone=row.get('Часовой пояс'),
             phone=row.get('Телефон 1'),
-            latitude=row.get('Широта'),
-            longitude=row.get('Долгота'),
+            latitude=parse_float(row.get('Широта')),
+            longitude=parse_float(row.get('Долгота')),
         )
         db.add(point)
     db.commit()
     db.close()
+
+def parse_float(val):
+    if pd.isna(val) or val is None:
+        return None
+    if isinstance(val, str):
+        val = val.replace(',', '.')
+    try:
+        return float(val)
+    except Exception:
+        return None
+
+def parse_int(val):
+    if pd.isna(val) or val is None:
+        return None
+    try:
+        return int(val)
+    except Exception:
+        return None
 
 if __name__ == "__main__":
     models.Base.metadata.create_all(bind=database.engine)

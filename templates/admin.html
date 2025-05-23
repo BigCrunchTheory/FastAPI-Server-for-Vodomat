@@ -92,60 +92,131 @@
         </div>
 
         <div class="sidebar">
-            <div id="pointForm" style="display: none;">
-                <h4 id="formTitle">Редактировать точку</h4>
-                <form id="waterPointForm" class="mb-4">
-                    <input type="hidden" id="pointId">
-                    <div class="form-group">
-                        <label for="name">Название:</label>
-                        <input type="text" class="form-control" id="name" required>
+            <ul class="nav nav-tabs mb-3" id="adminTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="points-tab" data-bs-toggle="tab" data-bs-target="#pointsTab" type="button" role="tab">Водоматы</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#usersTab" type="button" role="tab">Пользователи</button>
+                </li>
+            </ul>
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="pointsTab" role="tabpanel">
+                    <div id="pointForm" style="display: none;">
+                        <h4 id="formTitle">Редактировать точку</h4>
+                        <form id="waterPointForm" class="mb-4">
+                            <input type="hidden" id="pointId">
+                            <div class="form-group">
+                                <label for="name">Название:</label>
+                                <input type="text" class="form-control" id="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="description">Описание:</label>
+                                <textarea class="form-control" id="description" rows="3"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="type">Тип:</label>
+                                <select class="form-select" id="type">
+                                    <option value="водомат">Водомат</option>
+                                    <option value="родник">Родник</option>
+                                    <option value="колонка">Колонка</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="address">Адрес:</label>
+                                <input type="text" class="form-control" id="address">
+                            </div>
+                            <div class="form-group">
+                                <label for="city">Город:</label>
+                                <input type="text" class="form-control" id="city">
+                            </div>
+                            <div class="form-group">
+                                <label for="rating">Рейтинг:</label>
+                                <input type="number" class="form-control" id="rating" step="0.1" min="0" max="5">
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">Телефон:</label>
+                                <input type="text" class="form-control" id="phone">
+                            </div>
+                            <div class="form-group">
+                                <label for="latitude">Широта:</label>
+                                <input type="number" class="form-control" id="latitude" step="0.000001" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="longitude">Долгота:</label>
+                                <input type="number" class="form-control" id="longitude" step="0.000001" required>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <button type="submit" class="btn btn-primary">Сохранить</button>
+                                <button type="button" class="btn btn-danger" onclick="deletePoint()">Удалить</button>
+                                <button type="button" class="btn btn-secondary" onclick="hideForm()">Отмена</button>
+                            </div>
+                        </form>
                     </div>
-                    <div class="form-group">
-                        <label for="description">Описание:</label>
-                        <textarea class="form-control" id="description" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="type">Тип:</label>
-                        <select class="form-select" id="type">
-                            <option value="водомат">Водомат</option>
-                            <option value="родник">Родник</option>
-                            <option value="колонка">Колонка</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="address">Адрес:</label>
-                        <input type="text" class="form-control" id="address">
-                    </div>
-                    <div class="form-group">
-                        <label for="city">Город:</label>
-                        <input type="text" class="form-control" id="city">
-                    </div>
-                    <div class="form-group">
-                        <label for="rating">Рейтинг:</label>
-                        <input type="number" class="form-control" id="rating" step="0.1" min="0" max="5">
-                    </div>
-                    <div class="form-group">
-                        <label for="phone">Телефон:</label>
-                        <input type="text" class="form-control" id="phone">
-                    </div>
-                    <div class="form-group">
-                        <label for="latitude">Широта:</label>
-                        <input type="number" class="form-control" id="latitude" step="0.000001" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="longitude">Долгота:</label>
-                        <input type="number" class="form-control" id="longitude" step="0.000001" required>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <button type="submit" class="btn btn-primary">Сохранить</button>
-                        <button type="button" class="btn btn-danger" onclick="deletePoint()">Удалить</button>
-                        <button type="button" class="btn btn-secondary" onclick="hideForm()">Отмена</button>
-                    </div>
-                </form>
-            </div>
 
-            <div id="pointList" class="point-list">
-                <!-- Список точек будет добавлен динамически -->
+                    <div id="pointList" class="point-list">
+                        <!-- Список точек будет добавлен динамически -->
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="usersTab" role="tabpanel">
+                    <div id="userSection" class="mb-4">
+                        <h5>Пользователи</h5>
+                        <form id="userCreateForm" class="mb-2 d-flex gap-2">
+                            <input type="text" class="form-control" id="userName" placeholder="Имя пользователя" required>
+                            <input type="email" class="form-control" id="userEmail" placeholder="Email" required>
+                            <input type="password" class="form-control" id="userPassword" placeholder="Пароль" required>
+                            <button type="submit" class="btn btn-sm btn-success">Создать</button>
+                        </form>
+                        <select class="form-select mb-2" id="userSelect"></select>
+                        <div id="userInfo" style="font-size: 0.95em;"></div>
+                        <button class="btn btn-primary btn-sm mb-2" onclick="showPaymentForm()">Тестовая оплата</button>
+                        <div id="paymentForm" style="display:none;">
+                            <h6>Совершить оплату</h6>
+                            <form id="payForm">
+                                <div class="form-group mb-1">
+                                    <label>Точка (ID):</label>
+                                    <input type="number" class="form-control" id="payPointId" required>
+                                </div>
+                                <div class="form-group mb-1">
+                                    <label>Литров:</label>
+                                    <input type="number" class="form-control" id="payVolume" required>
+                                </div>
+                                <div class="form-group mb-1">
+                                    <label>Сумма (руб):</label>
+                                    <input type="number" class="form-control" id="payAmount" required>
+                                </div>
+                                <div class="form-group mb-1">
+                                    <label>Способ оплаты:</label>
+                                    <select class="form-select" id="payMethod">
+                                        <option value="cash">Наличные</option>
+                                        <option value="card">Карта</option>
+                                        <option value="bonus">Бонусы</option>
+                                    </select>
+                                </div>
+                                <div class="form-group mb-1">
+                                    <label>Списать бонусов (если нужно):</label>
+                                    <input type="number" class="form-control" id="payBonusUsed" value="0">
+                                </div>
+                                <button type="submit" class="btn btn-success btn-sm mt-1">Оплатить</button>
+                                <button type="button" class="btn btn-secondary btn-sm mt-1" onclick="hidePaymentForm()">Отмена</button>
+                            </form>
+                        </div>
+                        <div id="userPayments" class="mt-2"></div>
+                    </div>
+
+                    <div id="userEditSection" class="mb-4" style="display:none;">
+                        <h5>Редактировать пользователя</h5>
+                        <form id="userEditForm" class="mb-2">
+                            <input type="text" class="form-control mb-2" style="width:100%" id="editUserName" placeholder="Имя пользователя" required>
+                            <input type="email" class="form-control mb-2" style="width:100%" id="editUserEmail" placeholder="Email" required>
+                            <input type="password" class="form-control mb-2" style="width:100%" id="editUserPassword" placeholder="Новый пароль (не менять — оставить пустым)">
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-sm btn-primary">Сохранить</button>
+                                <button type="button" class="btn btn-sm btn-secondary" onclick="hideUserEditForm()">Отмена</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -411,6 +482,151 @@
                 alert('Ошибка при экспорте данных');
             }
         }
+        // --- User & Payment logic ---
+        async function loadUsers() {
+            const select = document.getElementById('userSelect');
+            select.innerHTML = '';
+            let users = [];
+            try {
+                // Получаем всех пользователей (можно реализовать отдельный эндпоинт, пока заглушка)
+                // Здесь пример: получаем 100 пользователей с id 1..100
+                for (let i = 1; i <= 10; i++) {
+                    const resp = await fetch(`/users/${i}`);
+                    if (resp.ok) {
+                        const user = await resp.json();
+                        users.push(user);
+                        select.innerHTML += `<option value="${user.id}">${user.name} (id:${user.id})</option>`;
+                    }
+                }
+            } catch {}
+            if (users.length > 0) {
+                select.value = users[0].id;
+                showUserInfo(users[0].id);
+            } else {
+                document.getElementById('userInfo').innerHTML = 'Нет пользователей.';
+            }
+        }
+
+        document.getElementById('userCreateForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('userName').value;
+            const email = document.getElementById('userEmail').value;
+            const password = document.getElementById('userPassword').value;
+            const resp = await fetch('/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password })
+            });
+            if (resp.ok) {
+                alert('Пользователь создан');
+                document.getElementById('userName').value = '';
+                document.getElementById('userEmail').value = '';
+                document.getElementById('userPassword').value = '';
+                loadUsers();
+            } else {
+                alert('Ошибка создания пользователя');
+            }
+        });
+
+        document.getElementById('userSelect').addEventListener('change', async function() {
+            const userId = this.value;
+            if (!userId) return;
+            const resp = await fetch(`/users/${userId}`);
+            if (resp.ok) {
+                const user = await resp.json();
+                showUserInfo(userId);
+                showUserEditForm(user);
+            }
+        });
+
+        async function showUserInfo(userId) {
+            if (!userId) return;
+            const resp = await fetch(`/users/${userId}`);
+            if (resp.ok) {
+                const user = await resp.json();
+                document.getElementById('userInfo').innerHTML = `
+                    <b>Баланс бонусов:</b> ${user.bonus_balance} л<br>
+                    <b>Всего куплено:</b> ${user.total_volume} л
+                `;
+                loadUserPayments(userId);
+            }
+        }
+
+        function showPaymentForm() {
+            document.getElementById('paymentForm').style.display = '';
+        }
+        function hidePaymentForm() {
+            document.getElementById('paymentForm').style.display = 'none';
+        }
+
+        document.getElementById('payForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userId = document.getElementById('userSelect').value;
+            const water_point_id = parseInt(document.getElementById('payPointId').value);
+            const volume = parseFloat(document.getElementById('payVolume').value);
+            const amount = parseFloat(document.getElementById('payAmount').value);
+            const payment_method = document.getElementById('payMethod').value;
+            const bonus_used = parseFloat(document.getElementById('payBonusUsed').value) || 0;
+            const payload = { user_id: parseInt(userId), water_point_id, volume, amount, payment_method, bonus_used, bonus_earned: 0, timestamp: new Date().toISOString() };
+            const resp = await fetch('/pay', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (resp.ok) {
+                alert('Оплата прошла успешно!');
+                hidePaymentForm();
+                showUserInfo(userId);
+            } else {
+                alert('Ошибка оплаты');
+            }
+        });
+
+        async function loadUserPayments(userId) {
+            const resp = await fetch(`/users/${userId}/payments`);
+            if (resp.ok) {
+                const payments = await resp.json();
+                let html = '<h6>История оплат:</h6>';
+                if (payments.length === 0) html += '<div>Нет оплат</div>';
+                else html += '<ul style="font-size:0.95em; padding-left:18px;">' + payments.map(p => `<li>${p.timestamp.slice(0,19).replace('T',' ')} | Точка: ${p.water_point_id} | ${p.volume} л | ${p.amount} руб | ${p.payment_method} | +${p.bonus_earned}л</li>`).join('') + '</ul>';
+                document.getElementById('userPayments').innerHTML = html;
+            }
+        }
+
+        function showUserEditForm(user) {
+            document.getElementById('userEditSection').style.display = '';
+            document.getElementById('editUserName').value = user.name;
+            document.getElementById('editUserEmail').value = user.email;
+            document.getElementById('editUserPassword').value = '';
+            document.getElementById('userEditForm').setAttribute('data-user-id', user.id);
+        }
+        function hideUserEditForm() {
+            document.getElementById('userEditSection').style.display = 'none';
+        }
+        document.getElementById('userEditForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userId = e.target.getAttribute('data-user-id');
+            const name = document.getElementById('editUserName').value;
+            const email = document.getElementById('editUserEmail').value;
+            const password = document.getElementById('editUserPassword').value;
+            const payload = { name, email };
+            if (password) payload.password = password;
+            const resp = await fetch(`/users/${userId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (resp.ok) {
+                alert('Данные пользователя обновлены');
+                hideUserEditForm();
+                loadUsers();
+            } else {
+                alert('Ошибка при обновлении пользователя');
+            }
+        });
+
+        // Автоматически загрузить пользователей при открытии
+        window.addEventListener('DOMContentLoaded', loadUsers);
     </script>
 </body>
 </html>

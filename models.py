@@ -1,6 +1,8 @@
-from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy.orm import relationship
 from database import Base
 from database import engine
+from models_user import User
 
 class WaterPoint(Base):
     __tablename__ = "water_points"
@@ -19,6 +21,18 @@ class WaterPoint(Base):
     phone = Column(String, nullable=True)
     latitude = Column(Float)
     longitude = Column(Float)
+
+class Payment(Base):
+    __tablename__ = "payments"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    water_point_id = Column(Integer, nullable=False)
+    volume = Column(Float, nullable=False)  # Сколько литров куплено
+    amount = Column(Float, nullable=False)  # Сумма оплаты
+    payment_method = Column(String, nullable=False)  # Способ оплаты: cash, card, bonus
+    bonus_used = Column(Float, default=0)  # Сколько бонусов потрачено
+    bonus_earned = Column(Float, default=0)  # Сколько бонусов начислено
+    timestamp = Column(String, nullable=False)
 
 # Create all tables
 Base.metadata.create_all(bind=engine)

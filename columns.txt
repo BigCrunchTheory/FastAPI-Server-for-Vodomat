@@ -1,0 +1,4 @@
+(0, 'id', 'INTEGER', 1, None, 1)
+(1, 'name', 'VARCHAR', 1, None, 0)
+(2, 'bonus_balance', 'FLOAT', 0, None, 0)
+(3, 'total_volume', 'FLOAT', 0, None, 0)

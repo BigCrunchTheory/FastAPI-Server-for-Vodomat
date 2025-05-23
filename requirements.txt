@@ -4,3 +4,5 @@ sqlalchemy
 fastapi-admin
 python-dotenv
 pandas
+python-jose
+passlib[bcrypt]
