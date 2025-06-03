@@ -43,11 +43,6 @@ class User(UserBase):
     class Config:
         orm_mode = True
 
-class UserUpdate(BaseModel):
-    name: Optional[str] = None
-    email: Optional[str] = None
-    password: Optional[str] = None
-
 class PaymentBase(BaseModel):
     user_id: int
     water_point_id: int

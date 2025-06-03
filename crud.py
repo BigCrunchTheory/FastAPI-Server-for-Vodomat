@@ -131,17 +131,3 @@ def make_payment(db: Session, payment: schemas.PaymentCreate):
 
 def get_payments_by_user(db: Session, user_id: int):
     return db.query(models.Payment).filter(models.Payment.user_id == user_id).all()
-
-def update_user(db: Session, user_id: int, user_update: schemas.UserUpdate):
-    db_user = db.query(models_user.User).filter(models_user.User.id == user_id).first()
-    if not db_user:
-        return None
-    if user_update.name is not None:
-        db_user.name = user_update.name
-    if user_update.email is not None:
-        db_user.email = user_update.email
-    if user_update.password is not None and user_update.password != "":
-        db_user.password_hash = bcrypt.hash(user_update.password)
-    db.commit()
-    db.refresh(db_user)
-    return db_user

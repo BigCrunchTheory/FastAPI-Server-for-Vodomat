@@ -92,6 +92,17 @@
         </div>
 
         <div class="sidebar">
+            <div id="adminLoginSection" class="mb-3">
+                <h5>Вход администратора</h5>
+                <form id="adminLoginForm" class="mb-2 d-flex gap-2">
+                    <input type="email" class="form-control" id="adminEmail" placeholder="Email" required>
+                    <input type="password" class="form-control" id="adminPassword" placeholder="Пароль" required>
+                    <button type="submit" class="btn btn-sm btn-primary">Войти</button>
+                    <button type="button" class="btn btn-sm btn-secondary" id="adminLogoutBtn" style="display:none;">Выйти</button>
+                </form>
+                <div id="adminLoginStatus" style="font-size:0.95em;color:#b00;"></div>
+            </div>
+
             <ul class="nav nav-tabs mb-3" id="adminTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="points-tab" data-bs-toggle="tab" data-bs-target="#pointsTab" type="button" role="tab">Водоматы</button>
@@ -488,15 +499,12 @@
             select.innerHTML = '';
             let users = [];
             try {
-                // Получаем всех пользователей (можно реализовать отдельный эндпоинт, пока заглушка)
-                // Здесь пример: получаем 100 пользователей с id 1..100
-                for (let i = 1; i <= 10; i++) {
-                    const resp = await fetch(`/users/${i}`);
-                    if (resp.ok) {
-                        const user = await resp.json();
-                        users.push(user);
+                const resp = await fetch('/users');
+                if (resp.ok) {
+                    users = await resp.json();
+                    users.forEach(user => {
                         select.innerHTML += `<option value="${user.id}">${user.name} (id:${user.id})</option>`;
-                    }
+                    });
                 }
             } catch {}
             if (users.length > 0) {
@@ -506,6 +514,12 @@
                 document.getElementById('userInfo').innerHTML = 'Нет пользователей.';
             }
         }
+
+        // --- Автоматическая загрузка пользователей при открытии вкладки ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Автоматически загружаем пользователей при загрузке страницы
+            loadUsers();
+        });
 
         document.getElementById('userCreateForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -565,12 +579,21 @@
             const water_point_id = parseInt(document.getElementById('payPointId').value);
             const volume = parseFloat(document.getElementById('payVolume').value);
             const amount = parseFloat(document.getElementById('payAmount').value);
-            const payment_method = document.getElementById('payMethod').value;
+            let payment_method = document.getElementById('payMethod').value;
+            if (payment_method === 'cash') payment_method = 'card';
             const bonus_used = parseFloat(document.getElementById('payBonusUsed').value) || 0;
             const payload = { user_id: parseInt(userId), water_point_id, volume, amount, payment_method, bonus_used, bonus_earned: 0, timestamp: new Date().toISOString() };
+            const token = getAdminAuthToken();
+            if (!token) {
+                alert('Сначала выполните вход администратора!');
+                return;
+            }
             const resp = await fetch('/pay', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
                 body: JSON.stringify(payload)
             });
             if (resp.ok) {
@@ -578,7 +601,8 @@
                 hidePaymentForm();
                 showUserInfo(userId);
             } else {
-                alert('Ошибка оплаты');
+                const err = await resp.json().catch(() => ({}));
+                alert('Ошибка оплаты' + (err.detail ? ': ' + err.detail : ''));
             }
         });
 
@@ -625,8 +649,55 @@
             }
         });
 
-        // Автоматически загрузить пользователей при открытии
-        window.addEventListener('DOMContentLoaded', loadUsers);
+        // --- ADMIN AUTH ---
+        function setAdminAuthToken(token) {
+            localStorage.setItem('admin_token', token);
+            document.getElementById('adminLoginStatus').style.color = '#080';
+            document.getElementById('adminLoginStatus').textContent = 'Вход выполнен!';
+            document.getElementById('adminEmail').style.display = 'none';
+            document.getElementById('adminPassword').style.display = 'none';
+            document.querySelector('#adminLoginForm button[type="submit"]').style.display = 'none';
+            document.getElementById('adminLogoutBtn').style.display = '';
+        }
+        function getAdminAuthToken() {
+            return localStorage.getItem('admin_token') || '';
+        }
+        function clearAdminAuthToken() {
+            localStorage.removeItem('admin_token');
+            document.getElementById('adminLoginStatus').style.color = '#b00';
+            document.getElementById('adminLoginStatus').textContent = 'Не авторизован';
+            document.getElementById('adminEmail').style.display = '';
+            document.getElementById('adminPassword').style.display = '';
+            document.querySelector('#adminLoginForm button[type="submit"]').style.display = '';
+            document.getElementById('adminLogoutBtn').style.display = 'none';
+        }
+        document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            const resp = await fetch('/admin-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `username=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`
+            });
+            if (resp.ok) {
+                const data = await resp.json();
+                setAdminAuthToken(data.access_token);
+            } else {
+                clearAdminAuthToken();
+                document.getElementById('adminLoginStatus').textContent = 'Ошибка входа';
+            }
+        });
+        document.getElementById('adminLogoutBtn').addEventListener('click', function() {
+            clearAdminAuthToken();
+        });
+        window.addEventListener('DOMContentLoaded', () => {
+            if (getAdminAuthToken()) {
+                setAdminAuthToken(getAdminAuthToken());
+            } else {
+                clearAdminAuthToken();
+            }
+        });
     </script>
 </body>
 </html>
