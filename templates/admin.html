@@ -532,7 +532,17 @@
                 body: JSON.stringify({ name, email, password })
             });
             if (resp.ok) {
-                alert('Пользователь создан');
+                // --- Автоматический login после успешной регистрации ---
+                const loginResp = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `username=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`
+                });
+                if (loginResp.ok) {
+                    const data = await loginResp.json();
+                    localStorage.setItem('user_token', data.access_token);
+                }
+                alert('Пользователь создан и автоматически авторизован');
                 document.getElementById('userName').value = '';
                 document.getElementById('userEmail').value = '';
                 document.getElementById('userPassword').value = '';
@@ -648,6 +658,40 @@
                 alert('Ошибка при обновлении пользователя');
             }
         });
+
+        // --- Удаление пользователя (только для админа) ---
+        document.getElementById('deleteUserBtn')?.remove(); // на случай повторной вставки
+        const deleteBtn = document.createElement('button');
+        deleteBtn.id = 'deleteUserBtn';
+        deleteBtn.className = 'btn btn-danger btn-sm mb-2';
+        deleteBtn.textContent = 'Удалить пользователя';
+        deleteBtn.onclick = async function() {
+            const userId = document.getElementById('userSelect').value;
+            if (!userId || !confirm('Удалить пользователя?')) return;
+            const token = getAdminAuthToken();
+            if (!token) {
+                alert('Сначала выполните вход администратора!');
+                return;
+            }
+            const resp = await fetch(`/users/${userId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (resp.ok) {
+                alert('Пользователь удалён');
+                loadUsers();
+                document.getElementById('userInfo').innerHTML = '';
+                hideUserEditForm();
+            } else {
+                const err = await resp.json().catch(() => ({}));
+                alert('Ошибка удаления' + (err.detail ? ': ' + err.detail : ''));
+            }
+        };
+        // Вставляем кнопку в userSection
+        const userSection = document.getElementById('userSection');
+        if (userSection && !document.getElementById('deleteUserBtn')) {
+            userSection.appendChild(deleteBtn);
+        }
 
         // --- ADMIN AUTH ---
         function setAdminAuthToken(token) {

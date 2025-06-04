@@ -76,7 +76,9 @@ def create_user_with_password(db: Session, user: schemas.UserCreate):
     db_user = models_user.User(
         name=user.name,
         email=user.email,
-        password_hash=hashed_password
+        password_hash=hashed_password,
+        bonus_balance=0.0,  # Явно задаём дефолт
+        total_volume=0.0    # Явно задаём дефолт
     )
     db.add(db_user)
     db.commit()

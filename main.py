@@ -387,3 +387,20 @@ def create_default_admin():
             db.commit()
     finally:
         db.close()
+
+@app.delete("/users/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    # Только админ может удалять пользователей
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        is_admin = payload.get("is_admin", False)
+        if not is_admin:
+            raise HTTPException(status_code=403, detail="Only admin can delete users")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Could not validate credentials")
+    user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    db.delete(user)
+    db.commit()
+    return {"message": "Пользователь удалён"}
