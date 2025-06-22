@@ -1,8 +1,11 @@
 fastapi
 uvicorn[standard]
 sqlalchemy
+python-jose
+passlib[bcrypt]
+pydantic
+python-multipart
+# дополнительные зависимости
 fastapi-admin
 python-dotenv
 pandas
-python-jose
-passlib[bcrypt]
